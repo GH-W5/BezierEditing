@@ -15,9 +15,9 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtGui import *
-from qgis.core import *
-from qgis.gui import *
+from qgis.PyQt.QtGui import QColor
+from qgis.core import QgsWkbTypes
+from qgis.gui import QgsRubberBand, QgsVertexMarker
 
 
 class BezierMarker:

@@ -7,7 +7,7 @@
 from __future__ import print_function
 from numpy import *
 from . import bezier
-from qgis.core import *
+from qgis.core import QgsMessageLog, Qgis
 
 # Fit one (ore more) Bezier curves to a set of points
 def fitCurve(points, maxError):

@@ -15,7 +15,8 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.core import *
+from qgis.core import QgsGeometry, QgsPointXY, QgsWkbTypes, QgsCoordinateReferenceSystem, QgsCoordinateTransform, \
+    QgsProject
 from .fitCurves import *
 import copy
 import math
@@ -57,7 +58,8 @@ class BezierGeometry:
                 psB, csB, peB, ceB = bg._convertPointListToAnchorAndHandle(
                     points, "B")
 
-                if not(abs(csA[0] - csB[0]) < 0.0001 and abs(csA[1] - csB[1]) < 0.0001 and abs(ceA[0] - ceB[0]) < 0.0001 and abs(ceA[1] - ceB[1]) < 0.0001):
+                if not (abs(csA[0] - csB[0]) < 0.0001 and abs(csA[1] - csB[1]) < 0.0001 and abs(
+                        ceA[0] - ceB[0]) < 0.0001 and abs(ceA[1] - ceB[1]) < 0.0001):
                     bg.log("{}　{}　{}　{}".format(abs(
                         csA[0] - csB[0]), abs(csA[1] - csB[1]), abs(ceA[0] - ceB[0]), abs(ceA[1] - ceB[1])))
                     is_bezier = False
@@ -183,8 +185,8 @@ class BezierGeometry:
     def other_handle(self, handle_idx, point):
         point = self._trans(point)
         other_handle_idx = handle_idx + \
-            1 if handle_idx % 2 == 0 else handle_idx - 1
-        anchor_idx = math.floor(handle_idx/2)
+                           1 if handle_idx % 2 == 0 else handle_idx - 1
+        anchor_idx = math.floor(handle_idx / 2)
         anchor_point = self.getAnchor(anchor_idx)
         other_point = QgsPointXY(
             anchor_point[0] - (point[0] - anchor_point[0]), anchor_point[1] - (point[1] - anchor_point[1]))
@@ -297,7 +299,7 @@ class BezierGeometry:
             # Calculate inner product of vectors around intersection of bezier_line and update_line.
             # Forward if positive, backward if negative
             v1 = np.array(bezier_line[start_vertexidx]) - \
-                np.array(bezier_line[start_vertexidx - 1])
+                 np.array(bezier_line[start_vertexidx - 1])
             v2 = np.array(update_line[1]) - np.array(update_line[0])
             direction = np.dot(v1, v2)
 
@@ -317,9 +319,9 @@ class BezierGeometry:
             if lastpnt_is_near and last_vertexidx > start_vertexidx and last_anchoridx <= len(point_list):
 
                 polyline = point_list[start_anchoridx - 1][0:self._pointListIdx(start_vertexidx)] + \
-                    update_line + \
-                    point_list[last_anchoridx -
-                               1][self._pointListIdx(last_vertexidx):]
+                           update_line + \
+                           point_list[last_anchoridx -
+                                      1][self._pointListIdx(last_vertexidx):]
 
                 geom = self._smoothingGeometry(polyline)
                 for i in range(start_anchoridx, last_anchoridx):
@@ -341,8 +343,8 @@ class BezierGeometry:
             # modify polygon
             elif layer_type == QgsWkbTypes.PolygonGeometry and lastpnt_is_near and last_vertexidx <= start_vertexidx:
                 polyline = point_list[start_anchoridx - 1][0:self._pointListIdx(start_vertexidx)] + update_line + \
-                    point_list[last_anchoridx -
-                               1][self._pointListIdx(last_vertexidx):]
+                           point_list[last_anchoridx -
+                                      1][self._pointListIdx(last_vertexidx):]
                 geom = self._smoothingGeometry(polyline)
                 for i in range(start_anchoridx, self.anchorCount()):
                     self.history.append(
@@ -502,7 +504,7 @@ class BezierGeometry:
         snap_point = None
         snap_idx = None
         for i, p in reversed(list(enumerate(self.handle))):
-            if i == 0 or i == len(self.handle)-1:
+            if i == 0 or i == len(self.handle) - 1:
                 continue
             near = self._eachPointIsNear(p, point, d)
             if near:
@@ -569,7 +571,7 @@ class BezierGeometry:
                 self._moveHandle(act["pointidx"] * 2, act["ctrlpoint0"])
                 self._moveHandle(act["pointidx"] * 2 + 1, act["ctrlpoint1"])
             elif act["state"] == "delete_anchor2":
-                self._deleteAnchor(self.anchorCount()-1)
+                self._deleteAnchor(self.anchorCount() - 1)
                 self._addAnchor(0, act["point"])
                 self._moveHandle(1, act["ctrlpoint0"])
                 self._addAnchor(act["pointidx"], act["point"])
@@ -635,7 +637,7 @@ class BezierGeometry:
         points = np.array(polyline)
         # This expression returns the same point distance at any scale.
         # This value was determined by a manual test.
-        maxError = 25**(math.log(scale/2000, 5))
+        maxError = 25 ** (math.log(scale / 2000, 5))
         beziers = fitCurve(points, maxError)
         pointnum = 0
 
@@ -814,7 +816,7 @@ class BezierGeometry:
         # The way of thinking is the same as the left side
         if self.INTERPOLATION - 1 > bezier_idx:
             pointsB = [pnt] + \
-                self.points[point_idx:self._pointsIdx(anchor_idx) + 1]
+                      self.points[point_idx:self._pointsIdx(anchor_idx) + 1]
             ps, cs, pe, ce = self._convertPointListToAnchorAndHandle(
                 pointsB, type="B")
             c1b = QgsPointXY(cs[0], cs[1])
@@ -833,9 +835,9 @@ class BezierGeometry:
         for t in range(0, self.INTERPOLATION + 1):
             t = 1.0 * t / self.INTERPOLATION
             bx = (1 - t) ** 3 * p1.x() + 3 * t * (1 - t) ** 2 * \
-                c1.x() + 3 * t ** 2 * (1 - t) * c2.x() + t ** 3 * p2.x()
+                 c1.x() + 3 * t ** 2 * (1 - t) * c2.x() + t ** 3 * p2.x()
             by = (1 - t) ** 3 * p1.y() + 3 * t * (1 - t) ** 2 * \
-                c1.y() + 3 * t ** 2 * (1 - t) * c2.y() + t ** 3 * p2.y()
+                 c1.y() + 3 * t ** 2 * (1 - t) * c2.y() + t ** 3 * p2.y()
             points.append(QgsPointXY(bx, by))
         return points
 
@@ -904,7 +906,8 @@ class BezierGeometry:
 
     def _lineToInterpolatePointList(self, polyline):
 
-        return [self._bezier(polyline[i], polyline[i], polyline[i+1], polyline[i+1]) for i in range(0, len(polyline)-1)]
+        return [self._bezier(polyline[i], polyline[i], polyline[i + 1], polyline[i + 1]) for i in
+                range(0, len(polyline) - 1)]
 
     def _lineToPointList(self, polyline):
         """
@@ -976,7 +979,7 @@ class BezierGeometry:
         """
         convert polyline to smoothing geometry
         """
-        #polyline = self._smoothing(polyline)
+        # polyline = self._smoothing(polyline)
         geom = QgsGeometry.fromPolylineXY(polyline)
         smooth_geom = geom.smooth()
         return smooth_geom
