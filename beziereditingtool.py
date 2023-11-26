@@ -119,7 +119,7 @@ class BezierEditingTool(QgsMapTool):
         self.checkCRS()
 
     def canvasPressEvent(self, event):
-        modifiers = QApplication.keyboardModifiers()        # 获取
+        modifiers = QApplication.keyboardModifiers()        # 获取键盘
         layer = self.canvas.currentLayer()
         if not layer or layer.type() != QgsMapLayer.VectorLayer:
             return
