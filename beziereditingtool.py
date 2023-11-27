@@ -15,26 +15,25 @@
  *                                                                         *
  ***************************************************************************/
 """
+import math
+from typing import Dict, Any, List
+
 from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtCore import QObject, QLocale, QTranslator, QCoreApplication, QSettings, QPointF
+from qgis.PyQt.QtCore import QCoreApplication, QSettings, QPointF
 from qgis.PyQt.QtGui import QColor, QCursor, QPixmap, QFont, QTextDocument, QIcon
-from qgis.PyQt.QtWidgets import QApplication, QAction, QAbstractButton, QGraphicsItemGroup, QMenu, QInputDialog, \
-    QMessageBox, QPushButton
+from qgis.PyQt.QtWidgets import QApplication, QGraphicsItemGroup, QMenu, QInputDialog, QMessageBox, QPushButton
 from qgis.core import QgsSettingsRegistryCore, QgsSettingsEntryBool, QgsWkbTypes, QgsProject, QgsVectorLayer, \
-    QgsGeometry, QgsPointXY, QgsFeature, QgsEditFormConfig, QgsFeatureRequest, QgsDistanceArea, QgsRectangle, \
-    QgsVectorLayerUtils, Qgis, QgsAction, QgsApplication, QgsMapLayer, QgsCoordinateTransform, \
-    QgsExpressionContextScope, QgsSettings, QgsMarkerSymbol, QgsTextAnnotation, QgsMessageLog
+    QgsGeometry, QgsPointXY, QgsFeature, QgsFeatureRequest, QgsRectangle, QgsVectorLayerUtils, Qgis, QgsApplication, \
+    QgsMapLayer, QgsCoordinateTransform, QgsSettings, QgsMarkerSymbol, QgsTextAnnotation, QgsMessageLog
 from qgis.gui import QgsAttributeEditorContext, QgsMapTool, QgsAttributeDialog, QgsRubberBand, QgsAttributeForm, \
-    QgsVertexMarker, QgsHighlight, QgsMapCanvasAnnotationItem
+    QgsVertexMarker, QgsMapCanvasAnnotationItem
+
 from .BezierGeometry import BezierGeometry
 from .BezierMarker import BezierMarker
-import math
-import numpy as np
-from typing import Dict, Any, List
 
 
 class BezierEditingTool(QgsMapTool):
-    sLastUsedValues: Dict[str, Dict[int, Any]] = dict()
+    sLastUsedValues: Dict[str, Dict[int, Any]] = dict()  # 最后使用的值
 
     def __init__(self, canvas, iface):
         QgsMapTool.__init__(self, canvas)
@@ -879,7 +878,7 @@ class BezierEditingTool(QgsMapTool):
 
     def generate_menu(self):
         self.menu = QMenu()  # bezier一些设置
-        self.menu.addAction(self.tr("Guide settings...")
+        self.menu.addAction(self.tr("Guide settings...")  # 引导线设置
                             ).triggered.connect(self.guide_snap_setting)
         self.menu.addAction(self.tr("Reset guide")
                             ).triggered.connect(self.clear_guide)
@@ -891,13 +890,13 @@ class BezierEditingTool(QgsMapTool):
 
     def guide_snap_setting(self):
         num, ok = QInputDialog.getInt(QInputDialog(), self.tr("Set snap to angle"), self.tr(
-            "Enter snap angle (degree)"), self.snapToAngleUnit, 0, 90)
+            "Enter snap angle (degree)"), self.snapToAngleUnit, 0, 90)  # 引导线角度设置
         if ok:
             self.snapToAngleUnit = num
         num, ok = QInputDialog.getInt(QInputDialog(), self.tr("Set snap to length"), self.tr(
-            "Enter snap length (in case of LatLon in seconds)"), self.snapToLengthUnit, 0)
+            "Enter snap length (in case of LatLon in seconds)"), self.snapToLengthUnit, 0)  # 引导线长度设置
         if ok:
-            if self.projectCRS.projectionAcronym() == "longlat":
+            if self.projectCRS.projectionAcronym() == "longlat":  # 如果是经纬度坐标系,则将秒转换为度
                 self.snapToLengthUnit = num / 3600
             else:
                 self.snapToLengthUnit = num
