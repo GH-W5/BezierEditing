@@ -457,7 +457,7 @@ class BezierEditingTool(QgsMapTool):
                 if bool(modifiers & Qt.ControlModifier):
                     return
                 elif self.editing:
-                    # if right click on first anchor in editing, flip bezier line
+                    # if right click on first anchor in editing, flip bezier line 如果右键点击编辑中的第一个锚，翻转 bezier 线点顺序
                     if snapped[4] and self.bg.anchorCount() > 1:
                         self.bg.flip_line()
                         self.bm.show(self.show_handle)
