@@ -17,7 +17,7 @@
 """
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtCore import QObject, QLocale, QTranslator, QCoreApplication, QSettings, QPointF
-from qgis.PyQt.QtGui import QColor, QCursor, QPixmap, QFont, QTextDocument
+from qgis.PyQt.QtGui import QColor, QCursor, QPixmap, QFont, QTextDocument, QIcon
 from qgis.PyQt.QtWidgets import QApplication, QAction, QAbstractButton, QGraphicsItemGroup, QMenu, QInputDialog, \
     QMessageBox, QPushButton
 from qgis.core import QgsSettingsRegistryCore, QgsSettingsEntryBool, QgsWkbTypes, QgsProject, QgsVectorLayer, \
