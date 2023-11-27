@@ -39,7 +39,7 @@ class BezierEditingTool(QgsMapTool):
     def __init__(self, canvas, iface):
         QgsMapTool.__init__(self, canvas)
 
-        # qgis interface
+        # qgis interface qgis接口
         self.iface = iface
         self.canvas = canvas
         self.canvas.destinationCrsChanged.connect(self.crsChanged)  # 槽函数，向main发送投影信息 不需要
@@ -47,14 +47,14 @@ class BezierEditingTool(QgsMapTool):
         self.freehand_rbl = QgsRubberBand(self.canvas, QgsWkbTypes.LineGeometry)
         self.freehand_rbl.setColor(QColor(255, 0, 0, 150))
         self.freehand_rbl.setWidth(2)
-        # snap marker   捕捉标记
+        # snap marker 辅助标记点
         self.snap_mark = QgsVertexMarker(self.canvas)
         self.snap_mark.setColor(QColor(0, 0, 255))
         self.snap_mark.setPenWidth(2)
         self.snap_mark.setIconType(QgsVertexMarker.ICON_BOX)
         self.snap_mark.setIconSize(10)
         self.snap_mark.hide()
-        # snap guide line   捕捉指导线
+        # snap guide line   辅助指导线
         self.guide_rbl = QgsRubberBand(self.canvas, QgsWkbTypes.LineGeometry)
         self.guide_rbl.setColor(QColor(0, 0, 255, 150))
         self.guide_rbl.setWidth(1)
@@ -64,7 +64,7 @@ class BezierEditingTool(QgsMapTool):
         self.rubberBand.setColor(QColor(255, 0, 0, 100))
         self.rubberBand.setWidth(1)
 
-        # cursor icon  光标图标
+        # cursor icon  光标图形
         self.addanchor_cursor = QCursor(
             QPixmap(':/plugins/BezierEditing/icon/anchor.svg'), 1, 1)
         self.insertanchor_cursor = QCursor(
@@ -81,15 +81,15 @@ class BezierEditingTool(QgsMapTool):
             QPixmap(':/plugins/BezierEditing/icon/drawline.svg'), 1, 1)
         self.split_cursor = QCursor(
             QPixmap(':/plugins/BezierEditing/icon/mCrossHair.svg'), -1, -1)
-        self.unsplit_cursor = QCursor(Qt.ArrowCursor)
+        self.unsplit_cursor = QCursor(Qt.ArrowCursor)  # 箭头光标
 
-        # initialize variable
+        # initialize variable  初始化变量
         self.mode = "bezier"  # [bezier, freehand , split, unsplit]
         # [free, add_anchor, move_anchor, move_handle, insert_anchor, draw_line]
         self.mouse_state = "free"  # 鼠标状态
         self.editing = False  # in bezier editing or not 是否在编辑中
-        self.snapping = None  # in snap setting or not  是否在捕捉设置中
-        self.show_handle = True  # show handle or not   是否显示手柄
+        self.snapping = None  # in snap setting or not  是否在辅助设置中
+        self.show_handle = True  # show handle or not   是否显示辅助线
         self.editing_feature_id = None  # bezier editing feature id 编辑特征id
         self.editing_geom_type = None  # bezier editing geom type   编辑几何类型
         self.clicked_idx = None  # clicked anchor or handle idx  点击的锚点或手柄索引
@@ -99,8 +99,8 @@ class BezierEditingTool(QgsMapTool):
         # smart guide   智能指导
         self.guideLabelGroup = None  # 指导标签组
         self.smartGuideOn = False  # 智能指导开启
-        self.snapToLengthUnit = 0  # 捕捉长度单位
-        self.snapToAngleUnit = 0  # 捕捉角度单位
+        self.snapToLengthUnit = 0  # 辅助长度单位
+        self.snapToAngleUnit = 0  # 辅助角度单位
         self.generate_menu()  # 生成菜单
 
         # interpolation number
@@ -118,24 +118,30 @@ class BezierEditingTool(QgsMapTool):
             self.resetEditing()
         self.checkCRS()
 
-    def canvasPressEvent(self, event):
-        modifiers = QApplication.keyboardModifiers()        # 获取键盘
-        layer = self.canvas.currentLayer()
-        if not layer or layer.type() != QgsMapLayer.VectorLayer:
-            return
-        self.checkSnapSetting()
+    def canvasPressEvent(self, event):  # 鼠标按下事件
+        modifiers = QApplication.keyboardModifiers()  # 获取键盘
+        layer = self.canvas.currentLayer()  # 获取当前图层
+        if not layer or layer.type() != QgsMapLayer.VectorLayer:  # 如果图层为空或者图层类型不是矢量图层
+            return  # 返回
+        self.checkSnapSetting()  # 检查捕捉设置
+        # 获取捕捉点
+        # mouse_point 鼠标点
+        # snapped[0] 是否捕捉到点 snapped[1] 是否捕捉到锚点 snapped[2] 是否捕捉到手柄 snapped[3] 是否捕捉到线 snapped[4] 是否捕捉到起始点
+        # snap_point[0] 捕捉到的点 snap_point[1] 捕捉到的锚点 snap_point[2] 捕捉到的手柄 snap_point[3] 捕捉到的线 snap_point[4] 捕捉到的起始点
+        # snap_idx[0] 捕捉到的点索引 snap_idx[1] 捕捉到的锚点索引 snap_idx[2] 捕捉到的手柄索引 snap_idx[3] 捕捉到的线索引 snap_idx[4] 捕捉到的起始点索引
         mouse_point, snapped, snap_point, snap_idx = self.getSnapPoint(event)
         # bezier tool
         if self.mode == "bezier":
-            # right click
+            # right click 右键
             if event.button() == Qt.RightButton:
-                if bool(modifiers & Qt.ControlModifier):
-                    self.menu.exec_(QCursor.pos())
-            # left click
+                if bool(modifiers & Qt.ControlModifier):  # 如果按下了ctrl
+                    self.menu.exec_(QCursor.pos())  # 执行菜单
+            # left click 左键
             elif event.button() == Qt.LeftButton:
-                # with ctrl
+                # with ctrl 按下ctrl
                 if bool(modifiers & Qt.ControlModifier):
                     # if click on anchor with ctrl, force to add anchor not moving anchor
+                    # 如果按下ctrl并且点击了锚点，强制添加锚点而不是移动锚点
                     if snapped[1]:
                         if self.editing_geom_type == QgsWkbTypes.PolygonGeometry:
                             return
@@ -144,6 +150,7 @@ class BezierEditingTool(QgsMapTool):
                         self.bg.add_anchor(self.clicked_idx, snap_point[1])
                         self.bm.add_anchor(self.clicked_idx, snap_point[1])
                     # add the anchor snapped by guide. guide is on by ctrl
+                    # 通过指南添加锚点。指南通过ctrl打开
                     else:
                         if self.editing_geom_type == QgsWkbTypes.PolygonGeometry:
                             return
@@ -158,24 +165,28 @@ class BezierEditingTool(QgsMapTool):
                 # with alt
                 elif bool(modifiers & Qt.AltModifier):
                     # if click on anchor with alt, move out a handle from anchor
+                    # 如果按下alt并且点击了锚点，从锚点中移出一个手柄
                     if snapped[2] and snapped[1]:
                         self.mouse_state = "move_handle"
                         self.clicked_idx = snap_idx[2]
                     # if click on bezier line with alt, insert anchor in bezier line
+                    # 如果按下alt并且点击了bezier线，插入锚点
                     elif snapped[3] and not snapped[1]:
                         self.mouse_state = "insert_anchor"
                         self.bg.insert_anchor(snap_idx[3], snap_point[3])
                         self.bm.show()
                     # if click on handle, move handle
+                    # 如果点击了手柄，移动手柄
                     elif snapped[2]:
                         self.mouse_state = "move_handle"
                         self.clicked_idx = snap_idx[2]
                         self.bg.move_handle(snap_idx[2], snap_point[2])
                         self.bm.move_handle(snap_idx[2], snap_point[2])
 
-                # with shift
+                # with shift 按下shift
                 elif bool(modifiers & Qt.ShiftModifier):
                     # if click on anchor with shift, delete anchor from bezier line
+                    # 如果按下shift并且点击了锚点，从bezier线中删除锚点
                     if snapped[1]:
                         # polygon's first anchor
                         if self.editing_geom_type == QgsWkbTypes.PolygonGeometry and snap_idx[
@@ -190,14 +201,17 @@ class BezierEditingTool(QgsMapTool):
                             self.bm.delete_anchor(snap_idx[1])
 
                     # if click on handle with shift, move handle to anchor
+                    # 如果按下shift并且点击了手柄，将手柄移动到锚点
                     elif snapped[2]:
                         self.bg.delete_handle(snap_idx[2], snap_point[2])
                         point = self.bg.getAnchor(
                             int(snap_idx[2] / 2), revert=True)
                         self.bm.move_handle(snap_idx[2], point)
                 # click with no key
+                # 没有按键的点击
                 else:
                     # if click on anchor, move anchor
+                    # 如果点击了锚点，移动锚点
                     if snapped[1]:
                         self.mouse_state = "move_anchor"
                         self.clicked_idx = snap_idx[1]
@@ -211,12 +225,14 @@ class BezierEditingTool(QgsMapTool):
                             self.bm.move_anchor(snap_idx[1], snap_point[1])
 
                     # if click on handle, move handle
+                    # 如果点击了手柄，移动手柄
                     elif snapped[2]:
                         self.mouse_state = "move_handle"
                         self.clicked_idx = snap_idx[2]
                         self.bg.move_handle(snap_idx[2], snap_point[2])
                         self.bm.move_handle(snap_idx[2], snap_point[2])
                     # if click on canvas, add anchor
+                    # 如果点击了画布，添加锚点
                     else:
                         if self.editing_geom_type == QgsWkbTypes.PolygonGeometry:
                             return
@@ -229,10 +245,13 @@ class BezierEditingTool(QgsMapTool):
                         self.bg.add_anchor(self.clicked_idx, snap_point[0])
                         self.bm.add_anchor(self.clicked_idx, snap_point[0])
         # freehand tool
+        # 手绘工具
         elif self.mode == "freehand":
             # left click
+            # 左键
             if event.button() == Qt.LeftButton:
                 # if click on canvas, freehand drawing start
+                # 如果点击了画布，开始手绘
                 if not self.editing:
                     self.bg = BezierGeometry(self.projectCRS)
                     self.bm = BezierMarker(self.canvas, self.bg)
@@ -240,6 +259,7 @@ class BezierEditingTool(QgsMapTool):
                     self.bg.add_anchor(0, point, undo=False)
                     self.editing = True
                 # if click on bezier line, modified by freehand drawing
+                # 如果点击了bezier线，通过手绘修改
                 elif self.editing and (snapped[1] or snapped[3]):
                     if snapped[1]:
                         point = snap_point[1]
@@ -251,13 +271,16 @@ class BezierEditingTool(QgsMapTool):
                 self.freehand_rbl.reset(QgsWkbTypes.LineGeometry)
                 self.freehand_rbl.addPoint(point)
         # split tool
+        # 分割工具
         elif self.mode == "split":
             # right click
             if event.button() == Qt.RightButton:
                 # if right click in editing, bezier editing finish
+                # 如果在编辑中右键点击，bezier编辑完成
                 if self.editing:
                     self.finishEditing(layer)
                 # if right click on feature, bezier editing start
+                # 如果右键点击要素，bezier编辑开始
                 else:
                     ok = self.startEditing(layer, mouse_point)
                     if ok:
@@ -855,7 +878,7 @@ class BezierEditingTool(QgsMapTool):
         return mouse_point, snapped, snap_point, snap_idx
 
     def generate_menu(self):
-        self.menu = QMenu()     # bezier一些设置
+        self.menu = QMenu()  # bezier一些设置
         self.menu.addAction(self.tr("Guide settings...")
                             ).triggered.connect(self.guide_snap_setting)
         self.menu.addAction(self.tr("Reset guide")
